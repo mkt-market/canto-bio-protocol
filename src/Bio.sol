@@ -12,10 +12,10 @@ contract Bio is ERC721 {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Number of tokens minted
-    uint256 numMinted;
+    uint256 public numMinted;
 
     /// @notice Stores the bio value per NFT
-    mapping(uint256 => string) bio;
+    mapping(uint256 => string) public bio;
 
     /*//////////////////////////////////////////////////////////////
                                  EVENTS
