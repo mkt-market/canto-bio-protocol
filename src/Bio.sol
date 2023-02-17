@@ -41,6 +41,8 @@ contract Bio is ERC721 {
     /// @param _id ID to query for
     function tokenURI(uint256 _id) public view override returns (string memory) {
         if (_ownerOf[_id] == address(0)) revert TokenNotMinted(_id);
+        string memory svg = '<svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin meet" viewBox="0 0 400 200"><style>text { font-family: sans-serif; font-size: 12px; }</style>';
+        string memory text = string.concat("<text>", bio[_id], "</text>");
         string memory json = Base64.encode(
             bytes(
                 string(
@@ -48,7 +50,7 @@ contract Bio is ERC721 {
                         '{"name": "Bio #',
                         LibString.toString(_id),
                         '", "image": "data:image/svg+xml;base64,',
-                        Base64.encode(bytes(Utils.generateSVG(nftCharacters[_id], false))),
+                        Base64.encode(bytes(string.concat(svg, text, "</svg>"))),
                         '"}'
                     )
                 )
