@@ -49,7 +49,8 @@ contract Bio is ERC721 {
         string[] memory strLines = new string[](lines);
         bool prevByteWasContinuation;
         uint256 insertedLines;
-        bytes memory bytesLines = new bytes(44);
+        // Because we do not split on zero-width joiners, line in bytes can technically be much longer. Will be shortened to the needed length afterwards
+        bytes memory bytesLines = new bytes(80);
         uint bytesOffset;
         for (uint i; i < lengthInBytes; ++i) {
             bytes1 character = bioTextBytes[i];
@@ -60,19 +61,35 @@ contract Bio is ERC721 {
                 if (i != lengthInBytes - 1) {
                     nextCharacter = bioTextBytes[i + 1];
                 }
-                if (nextCharacter & 0x80 == 0 || nextCharacter & 0xC0 == 0xC0 || i == lengthInBytes - 1) {
-                    // ASCII character or Unicode start byte or last byte
-                    // TODO: Technically could split on an emoji modifier
+                if (nextCharacter & 0xC0 == 0x80) {
+                    // Unicode continuation byte, top two bits are 10
+                    prevByteWasContinuation = true;
+                } else {
+                    // Do not split when the prev. or next character is a zero width joiner. Otherwise, 👨‍👧‍👦 could become 👨>‍👧‍👦
+                    // Furthermore, do not split when next character is skin tone modifier to avoid 🤦‍♂️\n🏻
+                    if (
+                        // Note that we do not need to check i < lengthInBytes - 4, because we assume that it's a valid UTF8 string and these prefixes imply that another byte follows
+                        (nextCharacter == 0xE2 && bioTextBytes[i + 2] == 0x80 && bioTextBytes[i + 3] == 0x8D) ||
+                        (nextCharacter == 0xF0 &&
+                            bioTextBytes[i + 2] == 0x9F &&
+                            bioTextBytes[i + 3] == 0x8F &&
+                            uint8(bioTextBytes[i + 4]) >= 187 &&
+                            uint8(bioTextBytes[i + 4]) <= 191) ||
+                        (i >= 2 &&
+                            bioTextBytes[i - 2] == 0xE2 &&
+                            bioTextBytes[i - 1] == 0x80 &&
+                            bioTextBytes[i] == 0x8D)
+                    ) {
+                        prevByteWasContinuation = true;
+                        continue;
+                    }
                     assembly {
                         mstore(bytesLines, bytesOffset)
                     }
                     strLines[insertedLines++] = string(bytesLines);
-                    bytesLines = new bytes(44);
+                    bytesLines = new bytes(80);
                     prevByteWasContinuation = false;
                     bytesOffset = 0;
-                } else if (nextCharacter & 0xC0 == 0x80) {
-                    // Unicode continuation byte
-                    prevByteWasContinuation = true;
                 }
             }
         }

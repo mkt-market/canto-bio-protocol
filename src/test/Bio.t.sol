@@ -29,4 +29,13 @@ contract ContractTest is DSTest {
         bio.mint(unicode"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
         console.log(bio.tokenURI(1));
     }
+
+    function testExampleSplitting() public {
+        address payable alice = users[0];
+        // labels alice's address in call traces as "Alice [<address>]"
+        vm.label(alice, "Alice");
+        vm.prank(alice);
+        bio.mint(unicode"😀🤦🏿😀🤦🏿😀😀😀🤦🏿😀🤦🏿😀😀🤦🏿🤦🏿🤦🏿");
+        console.log(bio.tokenURI(1));
+    }
 }
