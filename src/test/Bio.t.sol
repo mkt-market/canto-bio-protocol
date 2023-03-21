@@ -2,7 +2,7 @@
 pragma solidity >=0.8.0;
 
 import "forge-std/Test.sol";
-import "../src/Bio.sol";
+import "../Bio.sol";
 
 contract BioTest is Test {
     Bio public bio;
