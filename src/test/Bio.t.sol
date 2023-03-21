@@ -49,8 +49,8 @@ contract BioTest is Test {
         }
         return count;
     }
-    
-   function testMint() public {
+
+    function testMint() public {
         string memory _bio = "TEST BIO";
         uint256 prevNnumMinted = bio.numMinted();
         uint256 nnumMinted = prevNnumMinted + 1;
@@ -115,8 +115,8 @@ contract BioTest is Test {
     }
 
     function testRevertOver200() public {
-        string memory text =
-            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+        string
+            memory text = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
         uint256 len = bytes(text).length;
         assertGt(len, 200);
         vm.expectRevert(abi.encodeWithSelector(InvalidBioLength.selector, len));
