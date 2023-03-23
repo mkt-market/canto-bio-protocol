@@ -28,7 +28,7 @@ contract Bio is ERC721 {
     error TokenNotMinted(uint256 tokenID);
     error InvalidBioLength(uint256 length);
 
-    /// @notice Initiates CSR on mainnet
+    /// @notice Initiates CSR on main- and testnet
     constructor() ERC721("Biography", "Bio") {
         if (block.chainid == 7700 || block.chainid == 7701) {
             // Register CSR on Canto main- and testnet
