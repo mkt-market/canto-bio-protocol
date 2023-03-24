@@ -77,35 +77,4 @@ contract Bio is ERC721 {
         _mint(msg.sender, tokenId);
         emit BioAdded(msg.sender, tokenId, _bio);
     }
-
-    /// @notice Count how many bytes are needed to escape the chars in _text
-    /// @param _text Text to analyze
-    /// @return escapeBytesSVG Number of bytes for escaping in SVG, escapeBytesJSON Number of bytes for escaping in JSON
-    function _getAdditionalBytesForEscaping(
-        string memory _text
-    ) private pure returns (uint256 escapeBytesSVG, uint256 escapeBytesJSON) {
-        bytes memory textBytes = bytes(_text);
-        for (uint i; i < textBytes.length; ++i) {
-            if (textBytes[i] == "<" || textBytes[i] == ">") {
-                escapeBytesSVG += 3; // &lt; / &gt;
-            } else if (textBytes[i] == "&") {
-                escapeBytesSVG += 4; // &amp;
-            } else if (textBytes[i] == '"') {
-                escapeBytesSVG += 5; // &quot;
-                escapeBytesJSON++; // \"
-            } else if (textBytes[i] == "'") {
-                escapeBytesSVG += 5; // &apos;
-            } else if (
-                textBytes[i] == "\\" ||
-                textBytes[i] == "/" ||
-                uint8(textBytes[i]) == 8 || // Backspace
-                uint8(textBytes[i]) == 12 || // Formfeed
-                textBytes[i] == "\n" ||
-                textBytes[i] == "\r" ||
-                textBytes[i] == "\t"
-            ) {
-                escapeBytesJSON++;
-            }
-        }
-    }
 }
