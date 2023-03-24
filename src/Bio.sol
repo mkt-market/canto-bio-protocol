@@ -2,7 +2,7 @@
 pragma solidity >=0.8.0;
 
 import {ERC721} from "solmate/tokens/ERC721.sol";
-import {LibString} from "solmate/utils/LibString.sol";
+import {LibString} from "solady/utils/LibString.sol";
 import {Base64} from "solady/utils/Base64.sol";
 import "../interface/Turnstile.sol";
 
@@ -42,24 +42,8 @@ contract Bio is ERC721 {
     function tokenURI(uint256 _id) public view override returns (string memory) {
         if (_ownerOf[_id] == address(0)) revert TokenNotMinted(_id);
         string memory bioText = bio[_id];
-        bytes memory bioTextBytes = bytes(bioText);
-        // Check if any characters need to be escaped for the SVG
-        (
-            uint256 additionalBytesForEscapingSVG,
-            uint256 additionalBytesForEscapingJSON
-        ) = _getAdditionalBytesForEscaping(bioText);
-        string memory bioTextSVG;
-        if (additionalBytesForEscapingSVG == 0) {
-            bioTextSVG = bioText;
-        } else {
-            bioTextSVG = string(_escapeSVGCharacters(bioTextBytes, additionalBytesForEscapingSVG));
-        }
-        string memory bioTextJSON;
-        if (additionalBytesForEscapingJSON == 0) {
-            bioTextJSON = bioText;
-        } else {
-            bioTextJSON = string(_escapeJSONCharacters(bioTextBytes, additionalBytesForEscapingJSON));
-        }
+        string memory bioTextSVG = LibString.escapeHTML(bioText);
+        string memory bioTextJSON = LibString.escapeJSON(bioText);
         bytes memory imageBytes = bytes(
             string.concat(
                 '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 200"><style>.c{display:flex;align-items:center;justify-content:center;height:100%;}.bio{font-family:sans-serif;font-size:12px;max-width:34ch;line-height:20px;hyphens:auto;}</style><foreignObject width="100%" height="100%"><div class="c" xmlns="http://www.w3.org/1999/xhtml"><div class="bio">',
@@ -123,81 +107,5 @@ contract Bio is ERC721 {
                 escapeBytesJSON++;
             }
         }
-    }
-
-    /// @notice Escape all SVG characters in _srcString
-    /// @param _srcString Source string to escape
-    /// @param _bytesNeededForEscaping How many bytes are needed for escaping, i.e. how much larger the string will be
-    /// @return The escaped string
-    function _escapeSVGCharacters(
-        bytes memory _srcString,
-        uint256 _bytesNeededForEscaping
-    ) private pure returns (bytes memory) {
-        bytes memory dstString = new bytes(_srcString.length + _bytesNeededForEscaping);
-        uint256 j;
-        for (uint i; i < _srcString.length; ++i) {
-            if (_srcString[i] == "<") {
-                dstString[j++] = "&";
-                dstString[j++] = "l";
-                dstString[j++] = "t";
-                dstString[j++] = ";";
-            } else if (_srcString[i] == ">") {
-                dstString[j++] = "&";
-                dstString[j++] = "g";
-                dstString[j++] = "t";
-                dstString[j++] = ";";
-            } else if (_srcString[i] == "&") {
-                dstString[j++] = "&";
-                dstString[j++] = "a";
-                dstString[j++] = "m";
-                dstString[j++] = "p";
-                dstString[j++] = ";";
-            } else if (_srcString[i] == "'") {
-                dstString[j++] = "&";
-                dstString[j++] = "a";
-                dstString[j++] = "p";
-                dstString[j++] = "o";
-                dstString[j++] = "s";
-                dstString[j++] = ";";
-            } else if (_srcString[i] == '"') {
-                dstString[j++] = "&";
-                dstString[j++] = "q";
-                dstString[j++] = "u";
-                dstString[j++] = "o";
-                dstString[j++] = "t";
-                dstString[j++] = ";";
-            } else {
-                dstString[j++] = _srcString[i];
-            }
-        }
-        return dstString;
-    }
-
-    /// @notice Escape all JOSN characters in _srcString
-    /// @param _srcString Source string to escape
-    /// @param _bytesNeededForEscaping How many bytes are needed for escaping, i.e. how much larger the string will be
-    /// @return The escaped string
-    function _escapeJSONCharacters(
-        bytes memory _srcString,
-        uint256 _bytesNeededForEscaping
-    ) private pure returns (bytes memory) {
-        bytes memory dstString = new bytes(_srcString.length + _bytesNeededForEscaping);
-        uint256 j;
-        for (uint i; i < _srcString.length; ++i) {
-            if (
-                _srcString[i] == '"' ||
-                _srcString[i] == "\\" ||
-                _srcString[i] == "/" ||
-                uint8(_srcString[i]) == 8 || // Backspace
-                uint8(_srcString[i]) == 12 || // Formfeed
-                _srcString[i] == "\n" ||
-                _srcString[i] == "\r" ||
-                _srcString[i] == "\t"
-            ) {
-                dstString[j++] = "\\";
-            }
-            dstString[j++] = _srcString[i];
-        }
-        return dstString;
     }
 }
