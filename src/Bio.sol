@@ -54,6 +54,12 @@ contract Bio is ERC721 {
         } else {
             bioTextSVG = string(_escapeSVGCharacters(bioTextBytes, additionalBytesForEscapingSVG));
         }
+        string memory bioTextJSON;
+        if (additionalBytesForEscapingJSON == 0) {
+            bioTextJSON = bioText;
+        } else {
+            bioTextJSON = string(_escapeJSONCharacters(bioTextBytes, additionalBytesForEscapingJSON));
+        }
         bytes memory imageBytes = bytes(
             string.concat(
                 '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 200"><style>.c{display:flex;align-items:center;justify-content:center;height:100%;}.bio{font-family:sans-serif;font-size:12px;max-width:34ch;line-height:20px;hyphens:auto;}</style><foreignObject width="100%" height="100%"><div class="c" xmlns="http://www.w3.org/1999/xhtml"><div class="bio">',
@@ -67,7 +73,7 @@ contract Bio is ERC721 {
                     '{"name": "Bio #',
                     LibString.toString(_id),
                     '", "description": "',
-                    bioText,
+                    bioTextJSON,
                     '", "image": "data:image/svg+xml;base64,',
                     Base64.encode(imageBytes),
                     '"}'
@@ -163,6 +169,34 @@ contract Bio is ERC721 {
             } else {
                 dstString[j++] = _srcString[i];
             }
+        }
+        return dstString;
+    }
+
+    /// @notice Escape all JOSN characters in _srcString
+    /// @param _srcString Source string to escape
+    /// @param _bytesNeededForEscaping How many bytes are needed for escaping, i.e. how much larger the string will be
+    /// @return The escaped string
+    function _escapeJSONCharacters(
+        bytes memory _srcString,
+        uint256 _bytesNeededForEscaping
+    ) private pure returns (bytes memory) {
+        bytes memory dstString = new bytes(_srcString.length + _bytesNeededForEscaping);
+        uint256 j;
+        for (uint i; i < _srcString.length; ++i) {
+            if (
+                _srcString[i] == '"' ||
+                _srcString[i] == "\\" ||
+                _srcString[i] == "/" ||
+                uint8(_srcString[i]) == 8 || // Backspace
+                uint8(_srcString[i]) == 12 || // Formfeed
+                _srcString[i] == "\n" ||
+                _srcString[i] == "\r" ||
+                _srcString[i] == "\t"
+            ) {
+                dstString[j++] = "\\";
+            }
+            dstString[j++] = _srcString[i];
         }
         return dstString;
     }
