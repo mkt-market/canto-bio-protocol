@@ -66,7 +66,7 @@ contract BioTest is Test {
         assertEq(bio.ownerOf(nnumMinted), alice, "NFT not minted");
     }
 
-    function testShortString(string memory text) public {
+    function testShortString() public {
         string memory text = "Lorem ipsum dolor sit amet";
         bio.mint(text);
         uint256 tokenId = bio.numMinted();
@@ -98,6 +98,26 @@ contract BioTest is Test {
         assertEq(
             svg,
             '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 200"><style>.c{display:flex;align-items:center;justify-content:center;height:100%;}.bio{font-family:sans-serif;font-size:12px;max-width:34ch;line-height:20px;hyphens:auto;}</style><foreignObject width="100%" height="100%"><div class="c" xmlns="http://www.w3.org/1999/xhtml"><div class="bio">Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dol</div></div></foreignObject></svg>'
+        );
+    }
+
+    function testEscaping() public {
+        string memory text = string.concat(
+            "<>'\"&\\/\n\r\t",
+            string(abi.encodePacked(bytes1(uint8(8)), bytes1(uint8(12))))
+        );
+        bio.mint(text);
+        uint256 tokenId = bio.numMinted();
+        string memory uri = bio.tokenURI(tokenId);
+        string memory json = string(Base64.decode(slice(uri, 29, bytes(uri).length)));
+        string memory svgB64 = string(slice(json, 74 + bytes(text).length + 7, bytes(json).length - 2)); // 7 escpaed JSON characters
+        assertEq(
+            uri,
+            "data:application/json;base64,eyJuYW1lIjogIkJpbyAjMSIsICJkZXNjcmlwdGlvbiI6ICI8PidcIiZcXC9cblxyXHRcYlxmIiwgImltYWdlIjogImRhdGE6aW1hZ2Uvc3ZnK3htbDtiYXNlNjQsUEhOMlp5QjRiV3h1Y3owaWFIUjBjRG92TDNkM2R5NTNNeTV2Y21jdk1qQXdNQzl6ZG1jaUlIWnBaWGRDYjNnOUlqQWdNQ0EwTURBZ01qQXdJajQ4YzNSNWJHVStMbU43WkdsemNHeGhlVHBtYkdWNE8yRnNhV2R1TFdsMFpXMXpPbU5sYm5SbGNqdHFkWE4wYVdaNUxXTnZiblJsYm5RNlkyVnVkR1Z5TzJobGFXZG9kRG94TURBbE8zMHVZbWx2ZTJadmJuUXRabUZ0YVd4NU9uTmhibk10YzJWeWFXWTdabTl1ZEMxemFYcGxPakV5Y0hnN2JXRjRMWGRwWkhSb09qTTBZMmc3YkdsdVpTMW9aV2xuYUhRNk1qQndlRHRvZVhCb1pXNXpPbUYxZEc4N2ZUd3ZjM1I1YkdVK1BHWnZjbVZwWjI1UFltcGxZM1FnZDJsa2RHZzlJakV3TUNVaUlHaGxhV2RvZEQwaU1UQXdKU0krUEdScGRpQmpiR0Z6Y3owaVl5SWdlRzFzYm5NOUltaDBkSEE2THk5M2QzY3Vkek11YjNKbkx6RTVPVGt2ZUdoMGJXd2lQanhrYVhZZ1kyeGhjM005SW1KcGJ5SStKbXgwT3labmREc21Jek01T3laeGRXOTBPeVpoYlhBN1hDOEtEUWtJRER3dlpHbDJQand2WkdsMlBqd3ZabTl5WldsbmJrOWlhbVZqZEQ0OEwzTjJaejQ9In0="
+        );
+        assertEq(
+            svgB64,
+            "PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgMjAwIj48c3R5bGU+LmN7ZGlzcGxheTpmbGV4O2FsaWduLWl0ZW1zOmNlbnRlcjtqdXN0aWZ5LWNvbnRlbnQ6Y2VudGVyO2hlaWdodDoxMDAlO30uYmlve2ZvbnQtZmFtaWx5OnNhbnMtc2VyaWY7Zm9udC1zaXplOjEycHg7bWF4LXdpZHRoOjM0Y2g7bGluZS1oZWlnaHQ6MjBweDtoeXBoZW5zOmF1dG87fTwvc3R5bGU+PGZvcmVpZ25PYmplY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSI+PGRpdiBjbGFzcz0iYyIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGh0bWwiPjxkaXYgY2xhc3M9ImJpbyI+Jmx0OyZndDsmIzM5OyZxdW90OyZhbXA7XC8KDQkIDDwvZGl2PjwvZGl2PjwvZm9yZWlnbk9iamVjdD48L3N2Zz4="
         );
     }
 
