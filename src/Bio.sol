@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity >=0.8.0;
 
-import {ERC721} from "solmate/tokens/ERC721.sol";
+import {ERC721Enumerable, ERC721} from "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import {LibString} from "solady/utils/LibString.sol";
 import {Base64} from "solady/utils/Base64.sol";
 import "../interface/Turnstile.sol";
 
-contract Bio is ERC721 {
+contract Bio is ERC721Enumerable {
     /*//////////////////////////////////////////////////////////////
                                  STATE
     //////////////////////////////////////////////////////////////*/
@@ -40,7 +40,7 @@ contract Bio is ERC721 {
     /// @notice Get the token URI for the specified _id
     /// @param _id ID to query for
     function tokenURI(uint256 _id) public view override returns (string memory) {
-        if (_ownerOf[_id] == address(0)) revert TokenNotMinted(_id);
+        if (!_exists(_id)) revert TokenNotMinted(_id);
         string memory bioText = bio[_id];
         string memory bioTextSVG = LibString.escapeHTML(bioText);
         string memory bioTextJSON = LibString.escapeJSON(bioText);
