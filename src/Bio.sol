@@ -2,11 +2,15 @@
 pragma solidity >=0.8.0;
 
 import {ERC721Enumerable, ERC721} from "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
+import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {LibString} from "solady/utils/LibString.sol";
 import {Base64} from "solady/utils/Base64.sol";
-import "../interface/Turnstile.sol";
+import {Owned} from "solmate/auth/Owned.sol";
+import {Turnstile} from "../interface/Turnstile.sol";
+import {ICidNFT, IAddressRegistry} from "../interface/ICidNFT.sol";
+import {ICidSubprotocol} from "../interface/ICidSubprotocol.sol";
 
-contract Bio is ERC721Enumerable {
+contract Bio is ERC721Enumerable, Owned {
     /*//////////////////////////////////////////////////////////////
                                  STATE
     //////////////////////////////////////////////////////////////*/
@@ -17,10 +21,24 @@ contract Bio is ERC721Enumerable {
     /// @notice Stores the bio value per NFT
     mapping(uint256 => string) public bio;
 
+    /// @notice Name with which the subprotocol is registered
+    string public subprotocolName;
+
+    /// @notice Url of the docs
+    string public docs;
+
+    /// @notice Urls of the library
+    string[] private libraries;
+
+    /// @notice Reference to the CID NFT
+    ICidNFT private immutable cidNFT;
+
     /*//////////////////////////////////////////////////////////////
                                  EVENTS
     //////////////////////////////////////////////////////////////*/
     event BioAdded(address indexed minter, uint256 indexed nftID, string indexed bio);
+    event DocsChanged(string newDocs);
+    event LibChanged(string[] newLibs);
 
     /*//////////////////////////////////////////////////////////////
                                  ERRORS
@@ -29,7 +47,11 @@ contract Bio is ERC721Enumerable {
     error InvalidBioLength(uint256 length);
 
     /// @notice Initiates CSR on main- and testnet
-    constructor() ERC721("Biography", "Bio") {
+    /// @param _cidNFT Reference to CID
+    /// @param _subprotocolName Name with which the subprotocol is registered
+    constructor(address _cidNFT, string memory _subprotocolName) ERC721("Biography", "Bio") Owned(msg.sender) {
+        subprotocolName = _subprotocolName;
+        cidNFT = ICidNFT(_cidNFT);
         if (block.chainid == 7700 || block.chainid == 7701) {
             // Register CSR on Canto main- and testnet
             Turnstile turnstile = Turnstile(0xEcf044C5B4b867CFda001101c617eCd347095B44);
@@ -76,5 +98,62 @@ contract Bio is ERC721Enumerable {
         bio[tokenId] = _bio;
         _mint(msg.sender, tokenId);
         emit BioAdded(msg.sender, tokenId, _bio);
+    }
+
+    /// @notice Get the subprotocol metadata that is associated with a subprotocol NFT
+    /// @param _tokenID The NFT to query
+    /// @return Subprotocol metadata as JSON
+    function metadata(uint256 _tokenID) external view returns (string memory) {
+        if (!_exists(_tokenID)) revert TokenNotMinted(_tokenID);
+        (uint256 cidNFTID, address cidNFTRegisteredAddress) = _getAssociatedCIDAndOwner(_tokenID);
+        string memory subprotocolData = string.concat('"bio": "', LibString.escapeJSON(bio[_tokenID]), '"');
+        string memory json = string.concat(
+            "{",
+            '"subprotocolName": "',
+            subprotocolName,
+            '",',
+            '"associatedCidToken":',
+            Strings.toString(cidNFTID),
+            ",",
+            '"associatedCidAddress": "',
+            Strings.toHexString(uint160(cidNFTRegisteredAddress), 20),
+            '",',
+            '"subprotocolData": {',
+            subprotocolData,
+            "}"
+            "}"
+        );
+        return json;
+    }
+
+    /// @notice Return the libraries / SDKs of the subprotocol (if any)
+    /// @return Location of the subprotocol library
+    function lib() external view returns (string[] memory) {
+        return libraries;
+    }
+
+    /// @notice Change the docs url
+    /// @param _newDocs New docs url
+    function changeDocs(string memory _newDocs) external onlyOwner {
+        docs = _newDocs;
+        emit DocsChanged(_newDocs);
+    }
+
+    /// @notice Change the lib urls
+    /// @param _newLibs New lib urls
+    function changeLib(string[] memory _newLibs) external onlyOwner {
+        libraries = _newLibs;
+        emit LibChanged(_newLibs);
+    }
+
+    /// @notice Get the associated CID NFT ID and the address that has registered this CID (if any)
+    /// @param _subprotocolNFTID ID of the subprotocol NFT to query
+    /// @return cidNFTID The CID NFT ID, cidNFTRegisteredAddress The registered address
+    function _getAssociatedCIDAndOwner(
+        uint256 _subprotocolNFTID
+    ) internal view returns (uint256 cidNFTID, address cidNFTRegisteredAddress) {
+        cidNFTID = cidNFT.getPrimaryCIDNFT(subprotocolName, _subprotocolNFTID);
+        IAddressRegistry addressRegistry = cidNFT.addressRegistry();
+        cidNFTRegisteredAddress = addressRegistry.getAddress(cidNFTID);
     }
 }

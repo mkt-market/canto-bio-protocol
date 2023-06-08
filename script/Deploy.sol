@@ -12,7 +12,7 @@ contract DeploymentScript is Script {
         string memory seedPhrase = vm.readFile(".secret");
         uint256 privateKey = vm.deriveKey(seedPhrase, 0);
         vm.startBroadcast(privateKey);
-        Bio bio = new Bio();
+        // Bio bio = new Bio();
         vm.stopBroadcast();
     }
 }

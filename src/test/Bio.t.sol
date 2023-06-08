@@ -14,7 +14,7 @@ contract BioTest is Test {
     error InvalidBioLength(uint256 length);
 
     function setUp() public {
-        bio = new Bio();
+        bio = new Bio(address(0), "");
         alice = address(1);
     }
 
