@@ -18,6 +18,9 @@ contract Bio is ERC721Enumerable, Owned {
     /// @notice Number of tokens minted
     uint256 public numMinted;
 
+    /// @notice Whether minting is enabled
+    bool public mintingEnabled = true;
+
     /// @notice Stores the bio value per NFT
     mapping(uint256 => string) public bio;
 
@@ -45,6 +48,7 @@ contract Bio is ERC721Enumerable, Owned {
     //////////////////////////////////////////////////////////////*/
     error TokenNotMinted(uint256 tokenID);
     error InvalidBioLength(uint256 length);
+    error MintingDisabled();
 
     /// @notice Initiates CSR on main- and testnet
     /// @param _cidNFT Reference to CID
@@ -92,6 +96,7 @@ contract Bio is ERC721Enumerable, Owned {
     /// @notice Mint a new Bio NFT
     /// @param _bio The text to add
     function mint(string calldata _bio) external {
+        if (!mintingEnabled) revert MintingDisabled();
         // We check the length in bytes, so will be higher for UTF-8 characters. But sufficient for this check
         if (bytes(_bio).length == 0 || bytes(_bio).length > 200) revert InvalidBioLength(bytes(_bio).length);
         uint256 tokenId = ++numMinted;
@@ -155,5 +160,17 @@ contract Bio is ERC721Enumerable, Owned {
         cidNFTID = cidNFT.getPrimaryCIDNFT(subprotocolName, _subprotocolNFTID);
         IAddressRegistry addressRegistry = cidNFT.addressRegistry();
         cidNFTRegisteredAddress = addressRegistry.getAddress(cidNFTID);
+    }
+
+    /// @notice Change the reference to the subprotocol name
+    /// @param _subprotocolName New subprotocol name
+    function changeSubprotocolName(string memory _subprotocolName) external onlyOwner {
+        subprotocolName = _subprotocolName;
+    }
+
+    /// @notice Enable or disable minting
+    /// @param _mintingEnabled New value for toggle
+    function setMintingEnabled(bool _mintingEnabled) external onlyOwner {
+        mintingEnabled = _mintingEnabled;
     }
 }
